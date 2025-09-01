@@ -14,7 +14,8 @@ public class NugetReportParserFactory
     
     public INugetReportParser GetParser(DotnetContext context)
     {
-        var suitable = _parsers.FirstOrDefault(p => p.CentralizedPackageManagement == context.CentralizedPackageManagement);
+        var isCentralized = context.CentralizedPackageFile != null;
+        var suitable = _parsers.FirstOrDefault(p => p.CentralizedPackageManagement == isCentralized);
 
         if (suitable == null)
             throw new InvalidOperationException("No suitable processor found for the context.");

@@ -31,9 +31,13 @@ public class App(NugetReportParserFactory factory)
         var projectFiles = Directory.GetFiles(workspace, "*.csproj", SearchOption.AllDirectories);
         Console.WriteLine($"Found {projectFiles.Length} projects.");
         
-        var context = new DotnetContext { CentralizedPackageManagement = packageFile != null };
+        var context = new DotnetContext
+        {
+            CentralizedPackageFile = packageFile,
+            ProjectFiles = projectFiles
+        };
 
-        var markdown = factory.GetParser(context).Process(packageFile, projectFiles);
+        var markdown = factory.GetParser(context).Process(context);
         
         var summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (!string.IsNullOrWhiteSpace(summaryPath))

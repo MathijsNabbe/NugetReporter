@@ -1,7 +1,9 @@
-﻿namespace NugetReport.Interfaces;
+﻿using NugetReport.Objects;
+
+namespace NugetReport.Interfaces;
 
 public interface INugetReportParser
 {
+    string Process(DotnetContext context);
     bool CentralizedPackageManagement { get; }
-    string Process(string packageFile, string[] projectFiles);
 }

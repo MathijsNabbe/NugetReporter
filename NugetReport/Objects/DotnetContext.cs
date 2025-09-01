@@ -2,5 +2,6 @@
 
 public class DotnetContext
 {
-    public bool? CentralizedPackageManagement { get; set; }
+    public string? CentralizedPackageFile { get; set; }
+    public string[] ProjectFiles { get; set; }
 }
