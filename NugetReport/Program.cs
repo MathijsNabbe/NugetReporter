@@ -1,6 +1,8 @@
-﻿using System.Xml.Linq;
+﻿using System.Text;
+using System.Xml.Linq;
 
 var workspace = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+var isGithubAction = !string.IsNullOrWhiteSpace(workspace);
 
 if (string.IsNullOrWhiteSpace(workspace))
 {
@@ -21,6 +23,38 @@ var projectFiles = GetProjectFiles(workspace);
 
 var packageVersions = LoadPropsVersions(packageFile);
 var references = projectFiles.SelectMany(f => LoadProjectReferences(f)).ToList();
+
+var groupedPackageReferences = references
+    .GroupBy(r => r.Package)
+    .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+var sb = new StringBuilder();
+sb.AppendLine("# 📦 NuGet Package Report");
+sb.AppendLine();
+sb.AppendLine("| Package | Version | Projects |");
+sb.AppendLine("|---------|---------|----------|");
+
+foreach (var group in groupedPackageReferences)
+{
+    var package = group.Key;
+    var version = packageVersions.TryGetValue(package, out var v) ? v : "(no version found)";
+    var projects = string.Join(", ", group.Select(r => r.Project).Distinct().OrderBy(p => p));
+
+    sb.AppendLine($"| {package} | {version} | {projects} |");
+}
+
+var summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+if (!string.IsNullOrWhiteSpace(summaryPath))
+{
+    File.AppendAllText(summaryPath, sb.ToString());
+    Console.WriteLine($"Report written to GitHub Actions summary: {summaryPath}");
+}
+else
+{
+    var localReport = Path.Combine(workspace, "NugetReport.md");
+    File.WriteAllText(localReport, sb.ToString());
+    Console.WriteLine($"Report written to: {localReport}");
+}
 
 return 0;
 
@@ -76,7 +110,7 @@ Dictionary<string,string> LoadPropsVersions(string propsFile)
     return packageVersions;
 }
 
-static IEnumerable<(string Project, string Package)> LoadProjectReferences(string projectFile)
+IEnumerable<(string Project, string Package)> LoadProjectReferences(string projectFile)
 {
     var projectName = Path.GetFileName(projectFile);
     var xml = XDocument.Load(projectFile);
