@@ -21,11 +21,36 @@ public class CentralizedPackagesReportParser : INugetReportParser
         sb.AppendLine("# 📦 NuGet Package Report");
         sb.AppendLine();
 
-        // --- Section 1: Used Packages ---
+        // --- Precompute groups ---
         var groupedReferences = references
             .GroupBy(r => r.Package, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var usedPackages = groupedReferences
+            .Select(g => g.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var unusedPackages = packageVersions
+            .Where(kvp => !usedPackages.Contains(kvp.Key))
+            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var unusedReferences = groupedReferences
+            .Where(g => !packageVersions.ContainsKey(g.Key))
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // --- Section 0: Summary ---
+        sb.AppendLine("## Summary");
+        sb.AppendLine();
+        sb.AppendLine("| Metric | Count |");
+        sb.AppendLine("|--------|-------|");
+        sb.AppendLine($"| Used packages | {usedPackages.Count} |");
+        sb.AppendLine($"| Unused packages | {unusedPackages.Count} |");
+        sb.AppendLine($"| Missing references | {unusedReferences.Count} |");
+        sb.AppendLine();
+
+        // --- Section 1: Used Packages ---
         sb.AppendLine("## Used Packages");
         sb.AppendLine();
         sb.AppendLine("| Package | Version | Projects |");
@@ -46,15 +71,6 @@ public class CentralizedPackagesReportParser : INugetReportParser
         }
 
         // --- Section 2: Unused Packages ---
-        var usedPackages = groupedReferences
-            .Select(g => g.Key)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var unusedPackages = packageVersions
-            .Where(kvp => !usedPackages.Contains(kvp.Key))
-            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
         if (unusedPackages.Count > 0)
         {
             sb.AppendLine();
@@ -70,12 +86,7 @@ public class CentralizedPackagesReportParser : INugetReportParser
         }
 
         // --- Section 3: Unused References ---
-        var missingReferences = groupedReferences
-            .Where(g => !packageVersions.ContainsKey(g.Key))
-            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (missingReferences.Count > 0)
+        if (unusedReferences.Count > 0)
         {
             sb.AppendLine();
             sb.AppendLine("## Unused References");
@@ -83,7 +94,7 @@ public class CentralizedPackagesReportParser : INugetReportParser
             sb.AppendLine("| Package | Projects |");
             sb.AppendLine("|---------|----------|");
 
-            foreach (var group in missingReferences)
+            foreach (var group in unusedReferences)
             {
                 var projects = string.Join(", ", group
                     .Select(r => r.Project)
