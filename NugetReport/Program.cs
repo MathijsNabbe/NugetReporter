@@ -2,7 +2,6 @@
 using System.Xml.Linq;
 
 var workspace = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
-var isGithubAction = !string.IsNullOrWhiteSpace(workspace);
 
 if (string.IsNullOrWhiteSpace(workspace))
 {
