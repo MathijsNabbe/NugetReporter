@@ -22,16 +22,37 @@ public class CentralizedPackagesReportParser : INugetReportParser
         sb.AppendLine();
         sb.AppendLine("| Package | Version | Projects |");
         sb.AppendLine("|---------|---------|----------|");
-
+        
         foreach (var group in groupedPackageReferences)
         {
             var package = group.Key;
-            var version = packageVersions.TryGetValue(package, out var v) ? v : "(no version found)";
+            var versionFound = packageVersions.TryGetValue(package, out var version);
+            if (versionFound == false)
+            {
+                Console.WriteLine($"Package {package} not found in Directory.Packages.props.");
+                continue;
+            }
+            
             var projects = string.Join(", ", group.Select(r => r.Project).Distinct().OrderBy(p => p));
 
             sb.AppendLine($"| {package} | {version} | {projects} |");
         }
+        
+        var unusedPackages = packageVersions.Keys.Except(groupedPackageReferences.Select(g => g.Key));
+        if (unusedPackages.Any())
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Unused Packages");
+            sb.AppendLine();
+            sb.AppendLine("| Package |");
+            sb.AppendLine("|---------|");
 
+            foreach (var kvp in unusedPackages)
+            {
+                sb.AppendLine($"| {kvp} |");
+            }
+        }
+        
         return sb.ToString();
     }
     
