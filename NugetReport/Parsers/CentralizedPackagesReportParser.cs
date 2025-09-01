@@ -11,11 +11,14 @@ public class CentralizedPackagesReportParser : INugetReportParser
 
     public string Process(DotnetContext context)
     {
+        if (string.IsNullOrWhiteSpace(context.CentralizedPackageFile))
+            throw new InvalidOperationException("No centralized package file found.");
+        
         // Load data
         var packageVersions = LoadPropsVersions(context.CentralizedPackageFile); // props file dictionary
         var references = context.ProjectFiles
-            .SelectMany(f => LoadProjectReferences(f))
-            .ToList(); // (Project, Package)
+            .SelectMany(LoadProjectReferences)
+            .ToList();
 
         var sb = new StringBuilder();
         sb.AppendLine("# 📦 NuGet Package Report");
