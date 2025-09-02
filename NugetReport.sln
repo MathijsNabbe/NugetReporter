@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{1A917F1B-566F-4628-8D3A-F496FB20C282}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		action.yml = action.yml
+		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
 Global

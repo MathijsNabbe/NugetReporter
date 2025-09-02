@@ -1,0 +1,7 @@
+name: "NuGet Report"
+description: "Collects all NuGet references and creates a detailed report about NuGet usage, versions, and mismatches."
+author: "Mathijs Nabbe"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
