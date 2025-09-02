@@ -30,3 +30,13 @@ jobs:
     
     - name: Build the Docker Image
       run: docker build . --file Dockerfile --tag actions-nuget-report:$(date +%s)
+
+  run-tool:
+    runs-on: ubuntu-latest
+    needs: build-image
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Execute the tool
+      uses: MathijsNabbe/NugetReporter@main
