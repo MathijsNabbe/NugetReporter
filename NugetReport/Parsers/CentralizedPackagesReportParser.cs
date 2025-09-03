@@ -1,5 +1,7 @@
 ﻿using System.Text;
+using System.Xml;
 using System.Xml.Linq;
+using NugetReport.Extensions;
 using NugetReport.Interfaces;
 using NugetReport.Objects;
 
@@ -15,14 +17,10 @@ public class CentralizedPackagesReportParser : INugetReportParser
             throw new InvalidOperationException("No centralized package file found.");
         
         // Load data
-        var packageVersions = LoadPropsVersions(context.CentralizedPackageFile); // props file dictionary
+        var packageVersions = LoadPropsVersions(context.CentralizedPackageFile);
         var references = context.ProjectFiles
             .SelectMany(LoadProjectReferences)
             .ToList();
-
-        var sb = new StringBuilder();
-        sb.AppendLine("# 📦 NuGet Package Report");
-        sb.AppendLine();
 
         // --- Precompute groups ---
         var groupedReferences = references
@@ -43,6 +41,10 @@ public class CentralizedPackagesReportParser : INugetReportParser
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        // --- Generate report ---
+        var sb = new StringBuilder();
+        sb.SetReportTitle();
+        
         // --- Section 0: Summary ---
         sb.AppendLine("## Summary");
         sb.AppendLine();
@@ -142,7 +144,18 @@ public class CentralizedPackagesReportParser : INugetReportParser
     private IEnumerable<(string Project, string Package)> LoadProjectReferences(string projectFile)
     {
         var projectName = Path.GetFileName(projectFile);
-        var xml = XDocument.Load(projectFile);
+        
+        XDocument? xml;
+        try
+        {
+            xml = XDocument.Load(projectFile);
+        }
+        catch (XmlException e)
+        {
+            Console.WriteLine($"{projectName} is a malformed project file or has an unsupported encoding. Skipping.. .");
+            yield break;
+        }
+        
         var packages = xml.Descendants("PackageReference");
         foreach (var package in packages)
         {

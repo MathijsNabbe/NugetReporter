@@ -9,6 +9,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.AddNugetReportParser<CentralizedPackagesReportParser>();
+        services.AddNugetReportParser<DefaultPackagesReportParser>();
         services.AddScoped<NugetReportParserFactory>();
         
         services.AddScoped<App>();

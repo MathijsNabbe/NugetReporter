@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{1A
 		README.md = README.md
 		action.yml = action.yml
 		Dockerfile = Dockerfile
+		.gitignore = .gitignore
 	EndProjectSection
 EndProject
 Global
