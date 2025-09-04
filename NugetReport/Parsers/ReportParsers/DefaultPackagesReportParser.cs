@@ -1,13 +1,13 @@
 ﻿using System.Text;
-using System.Xml;
-using System.Xml.Linq;
 using NugetReport.Extensions;
+using NugetReport.Factories;
+using NugetReport.Helpers;
 using NugetReport.Interfaces;
 using NugetReport.Objects;
 
-namespace NugetReport.Parsers;
+namespace NugetReport.Parsers.ReportParsers;
 
-public class DefaultPackagesReportParser : INugetReportParser
+public class DefaultPackagesReportParser(ProjectParserFactory projectParserFactory) : INugetReportParser
 {
     public bool CentralizedPackageManagement => false;
 
@@ -15,7 +15,34 @@ public class DefaultPackagesReportParser : INugetReportParser
     {
         // Load data
         var references = context.ProjectFiles
-            .SelectMany(LoadProjectReferences)
+            .SelectMany(project =>
+            {
+                var xml = XDocumentHelper.LoadXmlSafely(project);
+                if (xml == null)
+                {
+                    Console.WriteLine($"Skipping {Path.GetFileName(project)}.");
+                    return [];
+                }
+
+                var framework =
+                    xml.Descendants().FirstOrDefault(e => e.Name.LocalName == "TargetFramework")?.Value ??
+                    xml.Descendants().FirstOrDefault(e => e.Name.LocalName == "TargetFrameworkVersion")?.Value;
+
+                if (string.IsNullOrWhiteSpace(framework))
+                {
+                    Console.WriteLine($"No Framework detected, skipping {Path.GetFileName(project)}");
+                    return [];
+                }
+
+                var parser = projectParserFactory.GetParser(framework);
+                if (parser == null)
+                {
+                    Console.WriteLine($"Skipping {Path.GetFileName(project)}.");
+                    return [];
+                }
+                    
+                return parser.ParseNugetReferences(project);
+            })
             .ToList();
 
         // --- Precompute groups ---
@@ -55,35 +82,5 @@ public class DefaultPackagesReportParser : INugetReportParser
         }
 
         return sb.ToString();
-    }
-
-    private IEnumerable<(string Project, string Package, string Version)> LoadProjectReferences(string projectFile)
-    {
-        var projectName = Path.GetFileName(projectFile);
-
-        XDocument? xml;
-        try
-        {
-            xml = XDocument.Load(projectFile);
-        }
-        catch (XmlException e)
-        {
-            Console.WriteLine($"{projectName} is a malformed project file or has an unsupported encoding. Skipping...");
-            yield break;
-        }
-
-        var packages = xml.Descendants("PackageReference");
-        foreach (var package in packages)
-        {
-            var packageKey = package.Attribute("Include")?.Value ?? "";
-            var packageVersion = package.Attribute("Version")?.Value ?? "";
-            if (string.IsNullOrWhiteSpace(packageKey) || string.IsNullOrWhiteSpace(packageKey))
-            {
-                Console.WriteLine($"Malformed package reference found in {projectName}.");
-                continue;
-            }
-
-            yield return (projectName, packageKey, packageVersion);
-        }
     }
 }

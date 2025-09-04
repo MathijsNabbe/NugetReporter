@@ -5,7 +5,7 @@ using NugetReport.Extensions;
 using NugetReport.Interfaces;
 using NugetReport.Objects;
 
-namespace NugetReport.Parsers;
+namespace NugetReport.Parsers.ReportParsers;
 
 public class CentralizedPackagesReportParser : INugetReportParser
 {

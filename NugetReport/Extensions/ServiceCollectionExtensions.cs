@@ -9,4 +9,9 @@ public static class ServiceCollectionExtensions
     {
         return services.AddScoped<INugetReportParser, T>();
     }
+    
+    public static IServiceCollection AddProjectParser<T>(this IServiceCollection services) where T : class, IProjectParser
+    {
+        return services.AddScoped<IProjectParser, T>();
+    }
 }
