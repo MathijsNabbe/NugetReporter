@@ -40,7 +40,7 @@ public class DefaultPackagesReportParser(ProjectParserFactory projectParserFacto
                     Console.WriteLine($"Skipping {Path.GetFileName(project)}.");
                     return [];
                 }
-                    
+
                 return parser.ParseNugetReferences(project);
             })
             .ToList();
@@ -51,9 +51,21 @@ public class DefaultPackagesReportParser(ProjectParserFactory projectParserFacto
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var usedPackages = groupedReferences
+            .Select(g => g.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         // --- Generate report ---
         var sb = new StringBuilder();
         sb.SetReportTitle();
+
+        // --- Section 0: Summary ---
+        sb.AppendLine("## Summary");
+        sb.AppendLine();
+        sb.AppendLine("| Metric | Count |");
+        sb.AppendLine("|--------|-------|");
+        sb.AppendLine($"| Used packages | {usedPackages.Count} |");
+        sb.AppendLine();
 
         // --- Section 1: Packages References ---
         foreach (var group in groupedReferences)
